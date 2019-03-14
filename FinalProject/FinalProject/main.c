@@ -113,37 +113,42 @@ void turnEverythingOn() { //Turns all LEDs on
 }
 
 enum FLO_states{FLO_start, FLO_ON, FLO_OFF}FLO_state;
-void flickerOn() {
+void flickerOn() { //WORKS
 	switch (FLO_state) { //	TRANSITION
 		case FLO_start:
 			FLO_state = FLO_ON;
-		break;
+			break;
 		case FLO_ON:
 			FLO_state = FLO_OFF;
-		break;
+			break;
 		case FLO_OFF:
 			FLO_state = FLO_ON;
-		break;
+			break;
 	}
+	
 	switch (FLO_state) { //ACTIONS
+		case FLO_start:
+			turnEverythingOff();
+		break;
 		case FLO_ON:
 			turnEverythingOn();
-			break;
+		break;
 		case FLO_OFF:
 			turnEverythingOff();
-			break;
+		break;
 	}
+	
 }
 
 
 enum LC_states{LC_start, LC_layer1, LC_layer2, LC_layer3, LC_layer4}LC_state;
-void layerCascade(LC_state) {
+void layerCascade() {
 	
 	switch (LC_state) { //transitions
 		
 		case LC_start: 
+			count = 0;
 			turnEverythingOff();
-			
 			LC_state = LC_layer1;
 			break;
 		case LC_layer1:
@@ -202,11 +207,15 @@ void layerCascade(LC_state) {
 			break;
 		case LC_layer3:
 			layer = SetBit(layer, 1 , 0);
+			//layer = layer & 0x0D;
 			layer = SetBit(layer, 2, 1);
+			//layer = layer | 0x04;
 			break;
 		case LC_layer4:
 			layer = SetBit(layer, 2 , 0);
+			//layer = layer & 0x0B;
 			layer = SetBit(layer, 3, 1);
+			//layer = layer | 0x08;
 			break;
 	}
 }
@@ -216,11 +225,10 @@ void columnCascade() {
 	
 	switch (CC_state) { //TRANSITIONS
 		case CC_start:
-			turnEverythingOff();
+			turnEverythingOn();
 			count = 0;
-			layer = 0x0F; //Turns on all positives
 			CC_state = CC_column1;
-		break;
+			break;
 		case (CC_column1):
 			if (count == timing) {
 				CC_state = CC_column2;
@@ -230,7 +238,7 @@ void columnCascade() {
 				CC_state = CC_column1;
 				count++;
 			}
-		break;
+			break;
 		case (CC_column2):
 			if (count == timing) {
 				CC_state = CC_column3;
@@ -240,7 +248,7 @@ void columnCascade() {
 				CC_state = CC_column2;
 				count++;
 			}
-		break;
+			break;
 		case (CC_column3):
 			if (count == timing) {
 				CC_state = CC_column4;
@@ -250,7 +258,7 @@ void columnCascade() {
 				CC_state = CC_column3;
 				count++;
 			}
-		break;
+			break;
 		case (CC_column4):
 			if (count == timing) {
 				CC_state = CC_column1;
@@ -264,33 +272,32 @@ void columnCascade() {
 	}
 	switch (CC_state) { //ACTION
 		case CC_column1:
-			column12 = (0x00 & column12) | 0xF0;
-			column34 = (0x00 & column34);
-		break;
+			column12 = 0xF0;
+			column34 = 0xFF;
+			break;
 		case CC_column2:
-			column12 = (0x00 & column12) | 0x0F;
-			column34 = (0x00 & column34);
-		break;
+			column12 = 0x0F;
+			column34 = 0xFF;
+			break;
 		case CC_column3:
-			column34 = (0x00 & column34) | 0xF0;
-			column12 = (0x00 & column12);
-		break;
+			column34 = 0xF0;
+			column12 = 0xFF;
+			break;
 		case CC_column4:
-			column34 = (0x00 & column34) | 0x0F;
-			column12 = (0x00 & column12);
-		break;
+			column34 = 0x0F;
+			column12 = 0xFF;
+			break;
 	}
 }
 
 enum LE_states{LE_start, LE_state1, LE_state2, LE_state3, LE_state4}LE_state;
-void layerExtend(LE_state) {
-	switch (LE_state) {
-		
+void layerExtend() { //works
+	switch (LE_state) { //TRANSITIONS
 		case LE_start:
 			turnEverythingOff();
 			count = 0;
 			LE_state = LE_state1;
-		break;
+			break;
 		case LE_state1:
 			if (count == timing) {
 				LE_state = LE_state2;
@@ -300,7 +307,7 @@ void layerExtend(LE_state) {
 				LE_state = LE_state1;
 				count++;
 			}
-		break;
+			break;
 		case LE_state2:
 			if (count == timing) {
 				LE_state = LE_state3;
@@ -310,7 +317,7 @@ void layerExtend(LE_state) {
 				LE_state = LE_state2;
 				count++;
 			}
-		break;
+			break;
 		case LE_state3:
 			if (count == timing) {
 				LE_state = LE_state4;
@@ -320,7 +327,7 @@ void layerExtend(LE_state) {
 				LE_state = LE_state3;
 				count++;
 			}
-		break;
+			break;
 		case LE_state4:
 			if (count == timing) {
 				layer = 0x00; //resets
@@ -353,21 +360,21 @@ void layerExtend(LE_state) {
 	//
 //}
 enum RF_states{RF_start, RF_lit, RF_reset}RF_state;
-void randomFlicker() {
-	count = 0;
+void randomFlicker() { //WORKS
 	unsigned char randomLayer;
 	unsigned char randomColumnMacro;
 	unsigned char randomColumn;
 	switch (RF_state) { //TRANSISTIONS
 		case RF_start:
+			count = 0;
 			turnEverythingOff();
-			randomLayer = random(0,3);
-			randomColumnMacro = random (0,1);
-			randomColumn = random(0,7);
+			randomLayer = rand() % 4;
+			randomColumnMacro = rand() % 2;
+			randomColumn = rand() % 8;
 			RF_state = RF_lit;
 		break;
 		case RF_lit:
-			if (count == 3) {
+			if (count == 2) {
 				RF_state = RF_reset;
 				count = 0;
 			}
@@ -377,10 +384,10 @@ void randomFlicker() {
 			}
 		break;
 		case RF_reset:
-			if (count == 3) {
-				randomLayer = random(0,3);
-				randomColumnMacro = random (0,1);
-				randomColumn = random(0,7);
+			if (count == 2) {
+				randomLayer = rand() % 4;
+				randomColumnMacro = rand() % 2;
+				randomColumn = rand() % 8;
 				RF_state = RF_lit;
 				count = 0;
 			}
@@ -395,7 +402,7 @@ void randomFlicker() {
 			layer = SetBit(layer, randomLayer, 1);
 			if (randomColumnMacro == 0)
 				column12 = SetBit(column12, randomColumn, 1);
-			else
+			else if (randomColumnMacro == 1)
 				column34 = SetBit(column34, randomColumn, 1);
 		break;
 		case RF_reset:
@@ -404,9 +411,104 @@ void randomFlicker() {
 	}
 }
 
-//void randomRain() {
-	//
-//}
+enum RR_states{RR_start, RR_1, RR_2, RR_3, RR_4, RR_5}RR_state;
+void randomRain() {
+	unsigned char randomLayer;
+	unsigned char randomColumnMacro;
+	unsigned char randomColumn;
+	switch (RR_state) {
+		case RR_start:
+			count = 0;
+			turnEverythingOff();
+			randomLayer = rand() % 4;
+			randomColumnMacro = rand() % 2;
+			randomColumn = rand() % 8;
+			RR_state = RR_1;
+			break;
+		case RR_1:
+			if (count == 1) {
+				RR_state = RR_2;
+				count = 0;
+			}
+			else {
+				count++;
+				RF_state = RR_1;
+			}
+			break;
+		case RR_2:
+			if (count == 1) {
+				RR_state = RR_3;
+				count = 0;
+			}
+			else {
+				count++;
+				RF_state = RR_2;
+			}
+		break;
+		case RR_3:
+			if (count == 1) {
+				RR_state = RR_4;
+				count = 0;
+			}
+			else {
+				count++;
+				RF_state = RR_3;
+			}
+		break;
+		case RR_4:
+			if (count == 1) {
+				RR_state = RR_5;
+				count = 0;
+			}
+			else {
+				count++;
+				RF_state = RR_4;
+			}
+		break;
+		case RR_5:
+			if (count == 1) {
+				RR_state = RR_start;
+				count = 0;
+			}
+			else {
+				count++;
+				RF_state = RR_5;
+			}
+		break;
+	}
+	switch(RR_state) {
+		case RR_1:
+			if (randomColumnMacro == 0) {
+				column12 = SetBit(column12, randomColumn, 0);
+			}
+			else if (randomColumnMacro == 2) {
+				column34 = SetBit(column34, randomColumn, 0);
+			}
+			layer = SetBit(layer, 0, 1);
+			break;
+		case RR_2:
+			layer = SetBit(layer, 0, 0);
+			layer = SetBit(layer, 1, 1);
+			break;
+		case RR_3:
+			layer = SetBit(layer, 1, 0);
+			layer = SetBit(layer, 2, 1);
+			break;
+		case RR_4:
+			layer = SetBit(layer, 2, 0);
+			layer = SetBit(layer, 3, 1);
+			break;
+		case RR_5:
+			layer = SetBit(layer, 3, 0);
+			if (randomColumnMacro == 0) {
+				column12 = SetBit(column12, randomColumn, 1);
+			}
+			else if (randomColumnMacro == 2) {
+				column34 = SetBit(column34, randomColumn, 1);
+			}
+			break;
+	}
+}
 
 
 unsigned char buttonToggle() {
@@ -421,7 +523,7 @@ unsigned char buttonToggle() {
 	return 0; //(!button && !hold)  and (button && hold)
 }
 
-enum {start, OFF, ON, FO, LC, CC, LE, RF}state;
+enum {start, OFF, ON, FO, LC, CC, LE, RF, RR}state;
 void tick() {
 	switch (state) { //transitions
 		case start:
@@ -477,12 +579,20 @@ void tick() {
 		break;
 		case RF:
 			if (buttonToggle()) {
-				state = OFF;
+				state = RR;
 			}
 			else {
 				state = RF;
 			}
 		break;
+		case RR:
+			if (buttonToggle()) {
+				state = OFF;
+			}
+			else {
+				state = RR;
+			}
+			break;
 	}
 	switch (state) { //ACTIONS
 		case OFF:
@@ -495,7 +605,7 @@ void tick() {
 			flickerOn();
 			break;
 		case LC:
-			layerCascade(); //CC, LE, RF
+			layerCascade();
 			break;
 		case CC:
 			columnCascade();
@@ -505,6 +615,9 @@ void tick() {
 			break;
 		case RF:
 			randomFlicker();
+			break;
+		case RR:
+			randomRain();
 			break;
 	}
 	PORTA = layer;
@@ -517,10 +630,12 @@ int main(void) //LC, CC, LE, RF
 	DDRC = 0x00; PORTC = 0xFF;
 	DDRB = 0xFF; PORTB = 0x00;
 	DDRD = 0xFF; PORTD = 0x00;
+	FLO_state = FLO_start;
 	LC_state = LC_start;
 	CC_state = CC_start;
 	LE_state = LE_start;
 	RF_state = RF_start;
+	RR_state = RR_start;
 	
 	TimerSet(100);
 	TimerOn();
@@ -530,7 +645,7 @@ int main(void) //LC, CC, LE, RF
 		button = (~PINC & 0x01);
 		tick();
 		while(!TimerFlag);
-		TimerFlag = 1;
+		TimerFlag = 0;
 		
     }
 }
