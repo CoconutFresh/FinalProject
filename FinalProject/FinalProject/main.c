@@ -1,9 +1,6 @@
-/*
- * FinalProject.c
- *
- * Created: 3/13/2019 9:04:40 PM
- * Author : Glenn
- */ 
+/* Name: Glenn Bersabe NetID: gbers002
+ * Project: Final Project (LED Cube)
+ */
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -17,14 +14,46 @@ unsigned char column34 = 0x00; //D0, D1, D2, D3, D4, D5, D6, D7
 unsigned char timing = 2;
 unsigned char count = 0;
 //User input
-unsigned char button = 0x00;
+ uint16_t joyStick = 0x00;
 unsigned char hold = 0x00;
+
 
 volatile unsigned char TimerFlag = 0; // TimerISR() sets this to 1. C programmer should clear to 0.
 
 // Internal variables for mapping AVR's ISR to our cleaner TimerISR model.
 unsigned long _avr_timer_M = 1; // Start count from here, down to 0. Default 1 ms.
 unsigned long _avr_timer_cntcurr = 0; // Current internal count of 1ms ticks
+
+//ADC INITIATION (CODE FOUND FROM: http://maxembedded.com/2011/06/the-adc-of-the-avr/)
+void adc_init()
+{
+	// AREF = AVcc
+	ADMUX = (1<<REFS0);
+	
+	// ADC Enable and prescaler of 128
+	// 16000000/128 = 125000
+	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
+}
+
+uint16_t adc_read(uint8_t ch)
+{
+	// select the corresponding channel 0~7
+	// ANDing with ’7? will always keep the value
+	// of ‘ch’ between 0 and 7
+	ch &= 0b00000111;  // AND operation with 7
+	ADMUX = (ADMUX & 0xF8)|ch; // clears the bottom 3 bits before ORing
+	
+	// start single convertion
+	// write ’1? to ADSC
+	ADCSRA |= (1<<ADSC);
+	
+	// wait for conversion to complete
+	// ADSC becomes ’0? again
+	// till then, run loop continuously
+	while(ADCSRA & (1<<ADSC));
+	
+	return (ADC);
+}
 
 void TimerOn() {
 	// AVR timer/counter controller register TCCR1
@@ -512,11 +541,11 @@ void randomRain() {
 
 
 unsigned char buttonToggle() {
-	if (button && !hold) {
+	if (joyStick > 700) {
 		hold = 1;
 		return 1;
 	}
-	else if (!button && hold) {
+	else if (joyStick <= 300 ) {
 		hold = 0;
 		return 0;
 	}
@@ -620,16 +649,19 @@ void tick() {
 			randomRain();
 			break;
 	}
-	PORTA = layer;
 	PORTB = column12;
+	PORTC = layer;
 	PORTD = column34;
 }
 int main(void) //LC, CC, LE, RF
 {
-	DDRA = 0xFF; PORTA = 0x00;
-	DDRC = 0x00; PORTC = 0xFF;
+	adc_init();
+	DDRA = 0x00; PORTA = 0xFF; //Input
+	DDRC = 0xFF; PORTC = 0x00; //Layer Output
 	DDRB = 0xFF; PORTB = 0x00;
 	DDRD = 0xFF; PORTD = 0x00;
+	
+	
 	FLO_state = FLO_start;
 	LC_state = LC_start;
 	CC_state = CC_start;
@@ -642,7 +674,7 @@ int main(void) //LC, CC, LE, RF
 
     while (1) 
     {
-		button = (~PINC & 0x01);
+		joyStick = adc_read(0);
 		tick();
 		while(!TimerFlag);
 		TimerFlag = 0;
